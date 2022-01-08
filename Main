@@ -1,0 +1,106 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as plt
+from sklearn.preprocessing import scale
+from sklearn import metrics
+import sklearn
+from sklearn.preprocessing import normalize
+from sklearn import cluster
+from sklearn.preprocessing import scale
+from sklearn import preprocessing
+import scipy.cluster.hierarchy as shc
+
+
+
+
+import the data
+data = pd.read_csv("C:\Spyder\salaries.csv")
+#Clean data (drop columns with no full data)
+data = data.dropna()
+########finding job title of that in the data
+job_title = data["title"].value_counts()[0:10]
+job_title.columns = ["Job", "Count"]
+#segmenting data to only that of software engineer
+data = data[data['title'] == 'Software Engineer']
+
+
+############### Part 2- UnSupervised Learning     ############
+
+#######
+#scale data by dropping the variables we dont need
+data = data.drop(['timestamp','company','title','location','tag','level','gender','otherdetails','cityid','Doctorate_Degree','Highschool','Some_College','Race_Asian','Race_White','Race_Two_Or_More','Race_Black','Race_Hispanic','Race','Education','rowNumber','Masters_Degree','Bachelors_Degree','dmaid','bonus','stockgrantvalue','basesalary'], axis = 1 )
+
+x = data.values[:,1:3]
+y = data.values[:,0]
+
+data = scale(x)
+
+#plt.title("Dendrogram to find number of clusters to use")
+dend = shc.dendrogram(shc.linkage(data, method='ward'))
+
+n_samples, n_features = data.shape
+n_digits = len(np.unique(y))
+
+
+#Perform clustering using Euclidean-ward
+Model = cluster.AgglomerativeClustering(n_clusters=n_digits, linkage='average', affinity='cosine')  
+model.fit_predict(data)
+
+print("silhouette_score = ", metrics.silhouette_score(data, model.labels_))
+print("completeness_score = ", metrics.completeness_score(y, model.labels_))
+print("homogeneity_score = ", metrics.homogeneity_score(y, model.labels_))
+
+
+aff = ["euclidean", "l1", "l2", "manhattan", "cosine"]
+link = ["ward", "complete", "average"] 
+for a in aff:
+    for l in link:
+        if(l=="ward" and a!="euclidean"):
+           continue
+        else:
+            print(a,l)
+            model = cluster.AgglomerativeClustering(n_clusters=n_digits, linkage=l, affinity=a)
+            model.fit(data)
+            print("silhouette_score = ", metrics.silhouette_score(data, model.labels_))
+            print("completeness_score = ", metrics.completeness_score(y, model.labels_))
+            print("homogeneity_score = ", metrics.homogeneity_score(y, model.labels_))
+
+
+aff = ["euclidean", "l1", "l2", "manhattan", "cosine"]
+link = ["ward", "complete", "average"] 
+result = []
+for a in aff:
+    for l in link:
+        if(l=="ward" and a!="euclidean"):
+           continue
+        else:
+            model = cluster.AgglomerativeClustering(n_clusters=n_digits, linkage=l, affinity=a)
+            model.fit(data)
+            result.append([a,l,metrics.silhouette_score(data, model.labels_),metrics.completeness_score(y, model.labels_),metrics.homogeneity_score(y, model.labels_)])
+maxI = -1
+maxV = 0
+for i in range(0,len(result)):
+  print(result[i])
+  if(result[i][2]>maxV):
+    maxV = result[i][2]
+    maxI = i
+print("Max silhouette_score: ", result[maxI])
+maxI = -1
+maxV = 0
+for i in range(0,len(result)):
+  #print(result[i])
+  if(result[i][3]>maxV):
+    maxV = result[i][3]
+    maxI = i
+print("Max completeness_score: ", result[maxI])
+maxI = -1
+maxV = 0
+for i in range(0,len(result)):
+  #print(result[i])
+  if(result[i][4]>maxV):
+    maxV = result[i][4]
+    maxI = i
+print("Max homogeneity_score: ", result[maxI])
+
+
